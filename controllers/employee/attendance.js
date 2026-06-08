@@ -3,42 +3,49 @@ import s3 from "../../config/s3.js";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 
 export const employeeCheckIn = async (req, res) => {
-  try {
-    const {
-      employee_id,
-      employee_name,
-      checkin_location,
-      checkin_lat,
-      checkin_long,
-    } = req.body;
+    try {
+        const {
+            employee_id,
+            employee_name,
+            checkin_location,
+            checkin_lat,
+            checkin_long,
+        } = req.body;
 
-    if (!employee_id || !employee_name) {
-      return res.status(400).json({
-        success: false,
-        message: "employee_id and employee_name are required",
-      });
-    }
+        if (!employee_id || !employee_name) {
+            return res.status(400).json({
+                success: false,
+                message: "employee_id and employee_name are required",
+            });
+        }
+        if (!req.file) {
+            return res.status(400).json({
+                success: false,
+                message: "Check-in image is required",
+                allowed_formats: ["jpg", "jpeg", "png"],
+                max_file_size: "1 MB",
+            });
+        }
 
-    let checkin_image = null;
+        let checkin_image = null;
 
-    if (req.file) {
-      const fileName = `attendance/checkin/${Date.now()}-${
-        req.file.originalname
-      }`;
+        // if (req.file) {
+        const fileName = `attendance/checkin/${Date.now()}-${req.file.originalname
+            }`;
 
-      await s3.send(
-        new PutObjectCommand({
-          Bucket: process.env.AWS_BUCKET_NAME,
-          Key: fileName,
-          Body: req.file.buffer,
-          ContentType: req.file.mimetype,
-        })
-      );
+        await s3.send(
+            new PutObjectCommand({
+                Bucket: process.env.AWS_BUCKET_NAME,
+                Key: fileName,
+                Body: req.file.buffer,
+                ContentType: req.file.mimetype,
+            })
+        );
 
-      checkin_image = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
-    }
+        checkin_image = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
+        // }
 
-    const sql = `
+        const sql = `
       INSERT INTO employee_attendance (
         employee_id,
         employee_name,
@@ -51,78 +58,88 @@ export const employeeCheckIn = async (req, res) => {
       VALUES (?, ?, NOW(), ?, ?, ?, ?)
     `;
 
-    db.query(
-      sql,
-      [
-        employee_id,
-        employee_name,
-        checkin_image,
-        checkin_location,
-        checkin_lat,
-        checkin_long,
-      ],
-      (err, result) => {
-        if (err) {
-          return res.status(500).json({
-            success: false,
-            message: "Database error",
-            error: err.message,
-          });
-        }
+        db.query(
+            sql,
+            [
+                employee_id,
+                employee_name,
+                checkin_image,
+                checkin_location,
+                checkin_lat,
+                checkin_long,
+            ],
+            (err, result) => {
 
-        return res.status(201).json({
-          success: true,
-          message: "Check-in successful",
-          attendance_id: result.insertId,
-          checkin_image,
+
+                if (err) {
+                    return res.status(500).json({
+                        success: false,
+                        message: "Database error",
+                        error: err.message,
+                    });
+                }
+
+                return res.status(200).json({
+                    success: true,
+                    message: "Check-in successful",
+                    attendance_id: result.insertId,
+                    checkin_image,
+                });
+            }
+        );
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "Server error",
+            error: error.message,
         });
-      }
-    );
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: "Server error",
-      error: error.message,
-    });
-  }
+    }
 };
 
 export const employeeCheckOut = async (req, res) => {
-  try {
-    const {
-      employee_id,
-      checkout_location,
-      checkout_lat,
-      checkout_long,
-    } = req.body;
+    try {
+        const {
+            employee_id,
+            checkout_location,
+            checkout_lat,
+            checkout_long,
+        } = req.body;
 
-    if (!employee_id) {
-      return res.status(400).json({
-        success: false,
-        message: "employee_id is required",
-      });
-    }
+        if (!employee_id) {
+            return res.status(400).json({
+                success: false,
+                message: "employee_id is required",
+            });
+        }
 
-    let checkout_image = null;
+        if (!req.file) {
+            return res.status(400).json({
+                success: false,
+                message: "Check-out image is required",
+                allowed_formats: ["jpg", "jpeg", "png"],
+                max_file_size: "1 MB",
+            });
+        }
 
-    if (req.file) {
-      const fileName = `attendance/checkout/${Date.now()}-${
-        req.file.originalname
-      }`;
+        let checkout_image = null;
 
-      await s3.send(
-        new PutObjectCommand({
-          Bucket: process.env.AWS_BUCKET_NAME,
-          Key: fileName,
-          Body: req.file.buffer,
-          ContentType: req.file.mimetype,
-        })
-      );
+        // if (req.file) {
+        const fileName = `attendance/checkout/${Date.now()}-${req.file.originalname
+            }`;
 
-      checkout_image = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
-    }
+        await s3.send(
+            new PutObjectCommand({
+                Bucket: process.env.AWS_BUCKET_NAME,
+                Key: fileName,
+                Body: req.file.buffer,
+                ContentType: req.file.mimetype,
+            })
+        );
 
-    const findSql = `
+        checkout_image = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
+        // }
+
+        const findSql = `
       SELECT attendance_id
       FROM employee_attendance
       WHERE employee_id = ?
@@ -131,25 +148,25 @@ export const employeeCheckOut = async (req, res) => {
       LIMIT 1
     `;
 
-    db.query(findSql, [employee_id], (err, result) => {
-      if (err) {
-        return res.status(500).json({
-          success: false,
-          message: "Database error",
-          error: err.message,
-        });
-      }
+        db.query(findSql, [employee_id], (err, result) => {
+            if (err) {
+                return res.status(500).json({
+                    success: false,
+                    message: "Database error",
+                    error: err.message,
+                });
+            }
 
-      if (result.length === 0) {
-        return res.status(404).json({
-          success: false,
-          message: "No active check-in found",
-        });
-      }
+            if (result.length === 0) {
+                return res.status(404).json({
+                    success: false,
+                    message: "No active check-in found",
+                });
+            }
 
-      const attendanceId = result[0].attendance_id;
+            const attendanceId = result[0].attendance_id;
 
-      const updateSql = `
+            const updateSql = `
         UPDATE employee_attendance
         SET
           checkout_time = NOW(),
@@ -160,37 +177,101 @@ export const employeeCheckOut = async (req, res) => {
         WHERE attendance_id = ?
       `;
 
-      db.query(
-        updateSql,
-        [
-          checkout_image,
-          checkout_location,
-          checkout_lat,
-          checkout_long,
-          attendanceId,
-        ],
-        (updateErr) => {
-          if (updateErr) {
-            return res.status(500).json({
-              success: false,
-              message: "Database error",
-              error: updateErr.message,
-            });
-          }
+            db.query(
+                updateSql,
+                [
+                    checkout_image,
+                    checkout_location,
+                    checkout_lat,
+                    checkout_long,
+                    attendanceId,
+                ],
+                (updateErr) => {
+                    if (updateErr) {
+                        return res.status(500).json({
+                            success: false,
+                            message: "Database error",
+                            error: updateErr.message,
+                        });
+                    }
 
-          return res.status(200).json({
-            success: true,
-            message: "Check-out successful",
-            checkout_image,
-          });
+                    return res.status(200).json({
+                        success: true,
+                        message: "Check-out successful",
+                        checkout_image,
+                    });
+                }
+            );
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "Server error",
+            error: error.message,
+        });
+    }
+};
+
+//get attendance status of employee (CHECKED_IN or CHECKED_OUT)
+
+export const getAttendanceStatus = (req, res) => {
+    try {
+        const { employee_id } = req.body;
+
+        if (!employee_id) {
+            return res.status(400).json({
+                success: false,
+                message: "employee_id is required",
+            });
         }
-      );
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: "Server error",
-      error: error.message,
-    });
-  }
+
+        const sql = `
+      SELECT
+        attendance_id,
+
+        DATE(checkin_time) AS checkin_date,
+        TIME(checkin_time) AS checkin_time,
+
+        DATE(checkout_time) AS checkout_date,
+        TIME(checkout_time) AS checkout_time,
+
+        CASE
+          WHEN checkout_time IS NULL THEN 'CHECKED_IN'
+          ELSE 'CHECKED_OUT'
+        END AS status
+
+      FROM employee_attendance
+      WHERE employee_id = ?
+      ORDER BY attendance_id DESC
+      LIMIT 1
+    `;
+
+        db.query(sql, [employee_id], (err, result) => {
+            if (err) {
+                return res.status(500).json({
+                    success: false,
+                    message: "Database error",
+                    error: err.message,
+                });
+            }
+
+            if (result.length === 0) {
+                return res.status(404).json({
+                    success: false,
+                    message: "No attendance record found",
+                });
+            }
+
+            return res.status(200).json({
+                success: true,
+                data: result[0],
+            });
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "Server error",
+            error: error.message,
+        });
+    }
 };

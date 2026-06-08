@@ -3,7 +3,7 @@ import { adminLogin } from "../controllers/admin/login.js";
 import { employeeLogin } from "../controllers/employee/login.js";
 import { employeeRegister } from "../controllers/admin/register.js";
 import { createLeaveRequest, getLeaveRequests, deleteLeaveRequest } from "../controllers/employee/leave_request.js";
-import { employeeCheckIn, employeeCheckOut } from "../controllers/employee/attendance.js";
+import { employeeCheckIn, employeeCheckOut, getAttendanceStatus} from "../controllers/employee/attendance.js";
 import upload from "../middleware/upload.js";
 
 const router = express.Router();
@@ -26,5 +26,6 @@ router.post("/employee/checkin",upload.single("checkin_image"), employeeCheckIn)
 
 router.post("/employee/checkout", upload.single("checkout_image"), employeeCheckOut);
 
+router.post("/employee/attendance-status", getAttendanceStatus);
 
 export default router;

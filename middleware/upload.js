@@ -12,14 +12,14 @@ const fileFilter = (req, file, cb) => {
   if (allowedTypes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error("Only JPG, JPEG, and PNG  images are allowed"));
+    cb(new Error("Only JPG, JPEG, and PNG  images are allowed. Maximum file size: 1MB."));
   }
 };
 
 const upload = multer({
   storage,
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5 MB
+    fileSize: 1 * 1024 * 1024, // 1 MB
   },
   fileFilter,
 });
