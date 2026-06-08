@@ -19,6 +19,6 @@ router.post("/employee/leave-request", createLeaveRequest);
 
 router.post("/employee/get-leave-requests", getLeaveRequests);
 
-router.delete("/employee/delete-leave-request", deleteLeaveRequest);
+router.post("/employee/delete-leave-request", deleteLeaveRequest);
 
 export default router;
