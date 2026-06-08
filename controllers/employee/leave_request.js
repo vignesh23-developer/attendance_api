@@ -1,7 +1,7 @@
 import db from "../../config/db.js";
 
 // CREATE LEAVE REQUEST
- 
+
 export const createLeaveRequest = (req, res) => {
   try {
     const {
@@ -114,8 +114,12 @@ export const getLeaveRequests = (req, res) => {
 
 // delete leave request
 export const deleteLeaveRequest = (req, res) => {
+  console.log("BODY:", req.body);
+  console.log("PARAMS:", req.params);
+  console.log("QUERY:", req.query);
+
   try {
-    const { employee_id, leave_request_id } = req.body;
+    console.log("BODY RECEIVED:", req.body);
 
     if (!employee_id || !leave_request_id) {
       return res.status(400).json({
