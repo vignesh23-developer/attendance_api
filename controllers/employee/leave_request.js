@@ -29,7 +29,7 @@ export const createLeaveRequest = (req, res) => {
     }
 
     const sql = `
-      INSERT INTO texa_attendance.leave_requests
+      INSERT INTO texa_attendance.leave_request
       (employee_id, employee_name, leave_type, from_date, to_date, reason)
       VALUES (?, ?, ?, ?, ?, ?)
     `;
@@ -82,7 +82,7 @@ export const getLeaveRequests = (req, res) => {
         from_date,
         to_date,
         reason
-      FROM leave_requests
+      FROM leave_request
       WHERE employee_id = ?
       ORDER BY created_at DESC
     `;
@@ -125,7 +125,7 @@ export const deleteLeaveRequest = (req, res) => {
     }
 
     const sql = `
-      DELETE FROM leave_requests
+      DELETE FROM leave_request
       WHERE employee_id = ?
       AND leave_request_id = ?
     `;
