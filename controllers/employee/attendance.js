@@ -305,7 +305,7 @@ export const getAttendanceStatus = (req, res) => {
         }
 
         const sql = `
-            SELECT
+           SELECT
                 attendance_id,
 
                 DATE(checkin_time) AS checkin_date,
@@ -314,10 +314,7 @@ export const getAttendanceStatus = (req, res) => {
                 DATE(checkout_time) AS checkout_date,
                 TIME(checkout_time) AS checkout_time,
 
-                CASE
-                    WHEN checkout_time IS NULL THEN 'CHECKED_IN'
-                    ELSE 'CHECKED_OUT'
-                END AS status
+                status
 
             FROM employee_attendance
             WHERE employee_id = ?
