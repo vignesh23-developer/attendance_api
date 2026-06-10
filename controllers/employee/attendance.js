@@ -45,7 +45,7 @@ export const employeeCheckIn = async (req, res) => {
             SELECT attendance_id
             FROM employee_attendance
             WHERE employee_id = ?
-            AND checkout_time IS NULL
+            AND DATE(checkin_time) = CURDATE()
             LIMIT 1
         `;
 
@@ -58,11 +58,51 @@ export const employeeCheckIn = async (req, res) => {
                 });
             }
 
-            if (rows && rows.length > 0) {
-                return res.status(400).json({
-                    success: false,
-                    message: "Employee already checked in. Please checkout first.",
-                });
+            if (rows.length > 0) {
+                const attendanceId = rows[0].attendance_id;
+
+                const updateSql = `
+                    UPDATE employee_attendance
+                        SET
+                            employee_name = ?,
+                            checkin_time = NOW(),
+                            checkin_image = ?,
+                            checkin_location = ?,
+                            checkin_lat = ?,
+                            checkin_long = ?
+                        WHERE attendance_id = ?
+                `;
+
+                db.query(
+                    updateSql,
+                    [
+                        employee_name,
+                        checkin_image,
+                        checkin_location,
+                        checkin_lat,
+                        checkin_long,
+                        attendanceId,
+                    ],
+                    (updateErr) => {
+                        if (updateErr) {
+                            return res.status(500).json({
+                                success: false,
+                                message: "Database error",
+                                error: updateErr.message,
+                            });
+                        }
+
+                        return res.status(200).json({
+                            success: true,
+                            message:
+                                "Today's attendance already exists. Record updated successfully.",
+                            attendance_id: attendanceId,
+                            checkin_image,
+                        });
+                    }
+                );
+
+                return;
             }
 
             const insertSql = `
@@ -155,13 +195,16 @@ export const employeeCheckOut = async (req, res) => {
         const checkout_image = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
 
         const findSql = `
-            SELECT attendance_id
-            FROM employee_attendance
-            WHERE employee_id = ?
-            AND checkout_time IS NULL
-            ORDER BY attendance_id DESC
-            LIMIT 1
-        `;
+                    SELECT
+                    attendance_id,
+                    checkin_time,
+                    checkout_time
+                FROM employee_attendance
+                WHERE employee_id = ?
+                AND DATE(checkin_time) = CURDATE()
+                AND checkout_time IS NULL
+                LIMIT 1
+`;
 
         db.query(findSql, [employee_id], (err, result) => {
             if (err) {
@@ -247,25 +290,26 @@ export const getAttendanceStatus = (req, res) => {
         }
 
         const sql = `
-      SELECT
-        attendance_id,
+            SELECT
+                attendance_id,
 
-        DATE(checkin_time) AS checkin_date,
-        TIME(checkin_time) AS checkin_time,
+                DATE(checkin_time) AS checkin_date,
+                TIME(checkin_time) AS checkin_time,
 
-        DATE(checkout_time) AS checkout_date,
-        TIME(checkout_time) AS checkout_time,
+                DATE(checkout_time) AS checkout_date,
+                TIME(checkout_time) AS checkout_time,
 
-        CASE
-          WHEN checkout_time IS NULL THEN 'CHECKED_IN'
-          ELSE 'CHECKED_OUT'
-        END AS status
+                CASE
+                    WHEN checkout_time IS NULL THEN 'CHECKED_IN'
+                    ELSE 'CHECKED_OUT'
+                END AS status
 
-      FROM employee_attendance
-      WHERE employee_id = ?
-      ORDER BY attendance_id DESC
-      LIMIT 1
-    `;
+            FROM employee_attendance
+            WHERE employee_id = ?
+            AND DATE(checkin_time) = CURDATE()
+            ORDER BY attendance_id DESC
+            LIMIT 1
+        `;
 
         db.query(sql, [employee_id], (err, result) => {
             if (err) {
@@ -279,7 +323,7 @@ export const getAttendanceStatus = (req, res) => {
             if (result.length === 0) {
                 return res.status(404).json({
                     success: false,
-                    message: "No attendance record found",
+                    message: "No attendance record found for today",
                 });
             }
 
