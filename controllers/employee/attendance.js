@@ -63,13 +63,21 @@ export const employeeCheckIn = async (req, res) => {
 
                 const updateSql = `
                     UPDATE employee_attendance
-                        SET
-                            employee_name = ?,
-                            checkin_time = NOW(),
-                            checkin_image = ?,
-                            checkin_location = ?,
-                            checkin_lat = ?,
-                            checkin_long = ?
+                    SET
+                        employee_name = ?,
+                        checkin_time = NOW(),
+                        checkin_image = ?,
+                        checkin_location = ?,
+                        checkin_lat = ?,
+                        checkin_long = ?,
+
+                        checkout_time = NULL,
+                        checkout_image = NULL,
+                        checkout_location = NULL,
+                        checkout_lat = NULL,
+                        checkout_long = NULL,
+
+                        status = 'Present'
                         WHERE attendance_id = ?
                 `;
 
@@ -105,18 +113,25 @@ export const employeeCheckIn = async (req, res) => {
                 return;
             }
 
-            const insertSql = `
-                INSERT INTO employee_attendance (
-                    employee_id,
-                    employee_name,
-                    checkin_time,
-                    checkin_image,
-                    checkin_location,
-                    checkin_lat,
-                    checkin_long,
-                    status
-                )
-                VALUES (?, ?, NOW(), ?, ?, ?, ?, 'Present')
+            const updateSql = `
+                UPDATE employee_attendance
+                SET
+                    employee_name = ?,
+                    checkin_time = NOW(),
+                    checkin_image = ?,
+                    checkin_location = ?,
+                    checkin_lat = ?,
+                    checkin_long = ?,
+
+                    checkout_time = NULL,
+                    checkout_image = NULL,
+                    checkout_location = NULL,
+                    checkout_lat = NULL,
+                    checkout_long = NULL,
+
+                    status = 'Present'
+
+                WHERE attendance_id = ?
             `;
 
             db.query(
@@ -224,22 +239,22 @@ export const employeeCheckOut = async (req, res) => {
 
             const attendanceId = result[0].attendance_id;
 
-            const updateSql = `
-                UPDATE employee_attendance
-                SET
-                    checkout_time = NOW(),
-                    checkout_image = ?,
-                    checkout_location = ?,
-                    checkout_lat = ?,
-                    checkout_long = ?,
-                    status =
-                        CASE
-                            WHEN TIMESTAMPDIFF(HOUR, checkin_time, NOW()) >= 8 THEN 'Present'
-                            WHEN TIMESTAMPDIFF(HOUR, checkin_time, NOW()) >= 4 THEN 'Half Day'
-                            ELSE 'Permission'
-                        END
-                WHERE attendance_id = ?
-            `;
+                const updateSql = `
+                    UPDATE employee_attendance
+                    SET
+                        checkout_time = NOW(),
+                        checkout_image = ?,
+                        checkout_location = ?,
+                        checkout_lat = ?,
+                        checkout_long = ?,
+                        status =
+                            CASE
+                                WHEN TIMESTAMPDIFF(HOUR, checkin_time, NOW()) >= 8 THEN 'Present'
+                                WHEN TIMESTAMPDIFF(HOUR, checkin_time, NOW()) >= 4 THEN 'Half Day'
+                                ELSE 'Permission'
+                            END
+                    WHERE attendance_id = ?
+                `;
 
             db.query(
                 updateSql,
