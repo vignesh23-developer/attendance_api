@@ -4,11 +4,14 @@ import { employeeLogin } from "../controllers/employee/login.js";
 import { employeeRegister } from "../controllers/admin/register.js";
 import { createLeaveRequest, getLeaveRequests, deleteLeaveRequest } from "../controllers/employee/leave_request.js";
 import { employeeCheckIn, employeeCheckOut, getAttendanceStatus} from "../controllers/employee/attendance.js";
+import { getEmployeeList } from "../controllers/admin/employeeList.js";
 import upload from "../middleware/upload.js";
 
 const router = express.Router();
 
+// Admin flow routes
 router.post("/admin/login", adminLogin);
+router.get("/admin/employee-list", getEmployeeList);
 router.post("/employee/login", employeeLogin);
 
 // Employee Registration with optional profile image upload
