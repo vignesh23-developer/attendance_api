@@ -5,6 +5,8 @@ import { employeeRegister } from "../controllers/admin/register.js";
 import { createLeaveRequest, getLeaveRequests, deleteLeaveRequest } from "../controllers/employee/leave_request.js";
 import { employeeCheckIn, employeeCheckOut, getAttendanceStatus} from "../controllers/employee/attendance.js";
 import { getEmployeeList , deleteEmployee, updateEmployee} from "../controllers/admin/employeeList.js";
+import {getLeaveRequestList,} from "../controllers/admin/leaveRequestList.js";
+import { updateLeaveStatus } from "../controllers/admin/leaveRequestList.js";
 import upload from "../middleware/upload.js";
 
 const router = express.Router();
@@ -18,6 +20,9 @@ router.delete("/delete/employee/:employee_id", deleteEmployee);
 
 router.put("/update/employee/:employee_id", updateEmployee);
 
+router.get("/admin/leave-request-list",getLeaveRequestList);
+
+router.post("/admin/update-leave", updateLeaveStatus);
 
 // Employee Registration with optional profile image upload
 router.post("/employee/register", upload.single("image"), employeeRegister);
