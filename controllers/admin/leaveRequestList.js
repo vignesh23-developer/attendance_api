@@ -95,3 +95,52 @@ export const updateLeaveStatus = (req, res) => {
     }
   );
 };
+
+export const getEmployeeLeaveHistory = (req, res) => {
+  const { employee_id } = req.body;
+
+  if (!employee_id) {
+    return res.status(400).json({
+      success: false,
+      message: "Employee ID is required",
+    });
+  }
+
+  db.query(
+    `
+    SELECT
+      leave_request_id,
+      employee_id,
+      employee_name,
+      leave_type,
+      from_date,
+      to_date,
+      reason,
+      status,
+      created_at
+    FROM leave_request
+    WHERE employee_id = ?
+    ORDER BY leave_request_id DESC
+    `,
+    [employee_id],
+    (err, results) => {
+      if (err) {
+        console.error(
+          "Get Employee Leave History Error:",
+          err
+        );
+
+        return res.status(500).json({
+          success: false,
+          message: "Database Error",
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        count: results.length,
+        data: results,
+      });
+    }
+  );
+};
