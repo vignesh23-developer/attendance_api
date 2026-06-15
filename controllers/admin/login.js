@@ -52,7 +52,13 @@ export const adminLogin = (req, res) => {
       return res.status(200).json({
         success: true,
         message: "Admin Login Successful",
-        token,
+        data: {
+          "email": user.email,  
+          "name": user.name,
+          "role": "admin",
+          "image": user.image,
+          token,
+        },
       });
     }
   );
