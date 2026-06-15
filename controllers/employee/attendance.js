@@ -134,6 +134,22 @@ export const employeeCheckIn = async (req, res) => {
                 WHERE attendance_id = ?
             `;
 
+            const insertSql = `
+INSERT INTO employee_attendance (
+    employee_id,
+    employee_name,
+    checkin_time,
+    checkin_image,
+    checkin_location,
+    checkin_lat,
+    checkin_long,
+    status
+)
+VALUES (
+    ?, ?, NOW(), ?, ?, ?, ?, 'Present'
+)
+`;
+
             db.query(
                 insertSql,
                 [
@@ -239,7 +255,7 @@ export const employeeCheckOut = async (req, res) => {
 
             const attendanceId = result[0].attendance_id;
 
-                const updateSql = `
+            const updateSql = `
                     UPDATE employee_attendance
                     SET
                         checkout_time = NOW(),
