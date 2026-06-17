@@ -9,7 +9,8 @@ export const employeeRegister = async (req, res) => {
       email,
       password,
       role,
-      number
+      number,
+      image
     } = req.body;
 
     if (!name || !email || !password || !role || !number) {
@@ -38,7 +39,7 @@ export const employeeRegister = async (req, res) => {
           });
         }
 
-        let imageUrl = null;
+        let imageUrl = image || null;
 
         if (req.file) {
           const fileName =
