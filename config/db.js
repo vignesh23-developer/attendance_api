@@ -17,10 +17,20 @@ db.getConnection((err, connection) => {
   if (err) {
     console.log("Database Connection Failed");
     console.log(err);
-  } else {
-    console.log("MySQL Connected.....");
-    connection.release();
+    return;
   }
+
+  console.log("MySQL Connected.....");
+
+  connection.query("SET time_zone = '+05:30'", (err) => {
+    if (err) {
+      console.log("Timezone Error:", err);
+    } else {
+      console.log("Timezone set to Asia/Kolkata");
+    }
+
+    connection.release();
+  });
 });
 
 export default db;
