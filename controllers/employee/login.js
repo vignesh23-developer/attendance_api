@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import jwt from "jsonwebtoken";
 import db from "../../config/db.js";
 
@@ -75,4 +76,83 @@ export const employeeLogin = (req, res) => {
             });
         }
     );
+=======
+import jwt from "jsonwebtoken";
+import db from "../../config/db.js";
+
+export const employeeLogin = (req, res) => {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+        return res.status(400).json({
+            success: false,
+            message: "Email and Password are required",
+        });
+    }
+
+    db.query(
+        "SELECT * FROM employee_login WHERE email = ?",
+        [email],
+        (err, results) => {
+            if (err) {
+                console.error(err);
+
+                return res.status(500).json({
+                    success: false,
+                    message: "Database Error, Please Contact Admin",
+                });
+            }
+
+            if (results.length === 0) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Employee Not Found",
+                });
+            }
+
+            const user = results[0];
+
+            // role is VARCHAR, this is fine
+            // if (user.role !== "employee") {
+            //     return res.status(403).json({
+            //         success: false,
+            //         message: "Employee Access Only",
+            //     });
+            // }
+
+            // plain text password comparison
+            if (user.password !== password) {
+                return res.status(401).json({
+                    success: false,
+                    message: "Invalid Password",
+                });
+            }
+
+            const token = jwt.sign(
+                {
+                    id: user.employee_id,
+                    role: user.role,
+                },
+                process.env.JWT_SECRET,
+                {
+                    expiresIn: "7d",
+                }
+            );
+
+            return res.status(200).json({
+                success: true,
+                message: "Employee Login Successful",
+                data: {
+                    loginId: user.employee_id,
+                    name: user.name,
+                    email: user.email,
+                    role: user.role,
+                    number: user.number,
+                    image: user.image,
+                },
+                token,
+            });
+        }
+    );
+>>>>>>> 5bee294a9f9e1f4c4f0bda1a4771bd78dcf6113a
 };
