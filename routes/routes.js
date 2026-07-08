@@ -7,6 +7,7 @@ import { employeeCheckIn, employeeCheckOut, getAttendanceStatus} from "../contro
 import { getEmployeeList , deleteEmployee, updateEmployee} from "../controllers/admin/employeeList.js";
 import { getLeaveRequestList, updateLeaveStatus, getEmployeeLeaveHistory} from "../controllers/admin/leaveRequestList.js";
 import { getDashboardCounts } from "../controllers/admin/dashboard.js";
+import { createTask, getEmployeeTasks } from "../controllers/admin/task_assigned.js";
 import upload from "../middleware/upload.js";
 
 const router = express.Router();
@@ -30,6 +31,9 @@ router.post("/admin/employee-history", getEmployeeLeaveHistory);
 
 router.get("/admin/dashboard", getDashboardCounts);
 
+router.post("/admin/create-task", createTask);
+
+router.get("/employee/tasks/:employee_id", getEmployeeTasks);
 
 
 
