@@ -57,7 +57,7 @@ export const createTask = async (req, res) => {
 
         const [result] = await db.execute(sql, values);
 
-        return res.status(201).json({
+        return res.status(200).json({
             success: true,
             message: "Task assigned successfully.",
             task_id: result.insertId
