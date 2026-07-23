@@ -55,7 +55,7 @@ export const createTask = async (req, res) => {
             task_status || "Assigned"
         ];
 
-        const [result] = await db.execute(sql, values);
+        const [result] = await db.promise().execute(sql, values);
 
         return res.status(200).json({
             success: true,
@@ -104,7 +104,7 @@ export const getEmployeeTasks = async (req, res) => {
             ORDER BY visit_date ASC, available_time ASC
         `;
 
-        const [rows] = await db.execute(sql, [employee_id]);
+        const [rows] = await db.promise().execute(sql, [employee_id]);
 
         return res.status(200).json({
             success: true,
