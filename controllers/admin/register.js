@@ -45,14 +45,23 @@ export const employeeRegister = async (req, res) => {
           const fileName =
             `employee/profiles/${Date.now()}-${req.file.originalname}`;
 
-          await s3.send(
-            new PutObjectCommand({
-              Bucket: process.env.AWS_BUCKET_NAME,
-              Key: fileName,
-              Body: req.file.buffer,
-              ContentType: req.file.mimetype
-            })
-          );
+          try {
+            await s3.send(
+              new PutObjectCommand({
+                Bucket: process.env.AWS_BUCKET_NAME,
+                Key: fileName,
+                Body: req.file.buffer,
+                ContentType: req.file.mimetype
+              })
+            );
+          } catch (uploadErr) {
+            console.error("Employee Register Image Upload Error:", uploadErr);
+
+            return res.status(500).json({
+              success: false,
+              message: "Image upload failed"
+            });
+          }
 
           imageUrl =
             `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
