@@ -1,14 +1,12 @@
 import jwt from "jsonwebtoken";
 import db from "../../config/db.js";
+import { sendError, sendSuccess } from "../../utils/response.js";
 
 export const employeeLogin = (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-        return res.status(400).json({
-            success: false,
-            message: "Email and Password are required",
-        });
+        return sendError(res, 400, "Email and Password are required");
     }
 
     db.query(
@@ -18,17 +16,11 @@ export const employeeLogin = (req, res) => {
             if (err) {
                 console.error(err);
 
-                return res.status(500).json({
-                    success: false,
-                    message: "Database Error, Please Contact Admin",
-                });
+                return sendError(res, 500, "Database Error, Please Contact Admin");
             }
 
             if (results.length === 0) {
-                return res.status(404).json({
-                    success: false,
-                    message: "Employee Not Found",
-                });
+                return sendError(res, 404, "Employee Not Found");
             }
 
             const user = results[0];
@@ -43,10 +35,7 @@ export const employeeLogin = (req, res) => {
 
             // plain text password comparison
             if (user.password !== password) {
-                return res.status(401).json({
-                    success: false,
-                    message: "Invalid Password",
-                });
+                return sendError(res, 401, "Invalid Password");
             }
 
             const token = jwt.sign(
@@ -60,8 +49,7 @@ export const employeeLogin = (req, res) => {
                 }
             );
 
-            return res.status(200).json({
-                success: true,
+            return sendSuccess(res, 200, {
                 message: "Employee Login Successful",
                 data: {
                     loginId: user.employee_id,

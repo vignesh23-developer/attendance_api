@@ -1,4 +1,5 @@
 import db from "../../config/db.js";
+import { sendError, sendSuccess } from "../../utils/response.js";
 
 export const createTask = async (req, res) => {
     try {
@@ -21,10 +22,7 @@ export const createTask = async (req, res) => {
             !contact_number ||
             !visit_date
         ) {
-            return res.status(400).json({
-                success: false,
-                message: "Please fill all required fields."
-            });
+            return sendError(res, 400, "Please fill all required fields.");
         }
 
         const sql = `
@@ -57,8 +55,7 @@ export const createTask = async (req, res) => {
 
         const [result] = await db.execute(sql, values);
 
-        return res.status(200).json({
-            success: true,
+        return sendSuccess(res, 200, {
             message: "Task assigned successfully.",
             task_id: result.insertId
         });
@@ -66,9 +63,7 @@ export const createTask = async (req, res) => {
     } catch (error) {
         console.error(error);
 
-        return res.status(500).json({
-            success: false,
-            message: "Internal Server Error",
+        return sendError(res, 500, "Internal Server Error", {
             error: error.message
         });
     }
@@ -79,10 +74,7 @@ export const getEmployeeTasks = async (req, res) => {
         const { employee_id } = req.params;
 
         if (!employee_id) {
-            return res.status(400).json({
-                success: false,
-                message: "Employee ID is required."
-            });
+            return sendError(res, 400, "Employee ID is required.");
         }
 
         const sql = `
@@ -106,8 +98,7 @@ export const getEmployeeTasks = async (req, res) => {
 
         const [rows] = await db.execute(sql, [employee_id]);
 
-        return res.status(200).json({
-            success: true,
+        return sendSuccess(res, 200, {
             total_tasks: rows.length,
             tasks: rows
         });
@@ -115,9 +106,7 @@ export const getEmployeeTasks = async (req, res) => {
     } catch (error) {
         console.error(error);
 
-        return res.status(500).json({
-            success: false,
-            message: "Internal Server Error",
+        return sendError(res, 500, "Internal Server Error", {
             error: error.message
         });
     }

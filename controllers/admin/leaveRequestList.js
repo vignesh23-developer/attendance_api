@@ -1,4 +1,5 @@
 import db from "../../config/db.js";
+import { sendError, sendSuccess, sendDbError } from "../../utils/response.js";
 
 export const getLeaveRequestList = (req, res) => {
   db.query(
@@ -19,14 +20,10 @@ export const getLeaveRequestList = (req, res) => {
       if (err) {
         console.error("Get Leave Request List Error:", err);
 
-        return res.status(500).json({
-          success: false,
-          message: "Database Error, Please Contact Support",
-        });
+        return sendDbError(res);
       }
 
-      return res.status(200).json({
-        success: true,
+      return sendSuccess(res, 200, {
         count: results.length,
         data: results,
       });
@@ -38,21 +35,17 @@ export const updateLeaveStatus = (req, res) => {
   const { employee_id, leave_request_id, status } = req.body;
 
   if (!employee_id || !leave_request_id || !status) {
-    return res.status(400).json({
-      success: false,
-      message:
-        "Employee ID, Leave Request ID and Status are required",
-    });
+    return sendError(
+      res,
+      400,
+      "Employee ID, Leave Request ID and Status are required"
+    );
   }
 
   const validStatus = ["Approved", "Rejected"];
 
   if (!validStatus.includes(status)) {
-    return res.status(400).json({
-      success: false,
-      message:
-        "Invalid status. Use Approved or Rejected",
-    });
+    return sendError(res, 400, "Invalid status. Use Approved or Rejected");
   }
 
   db.query(
@@ -70,23 +63,14 @@ export const updateLeaveStatus = (req, res) => {
           err
         );
 
-        return res.status(500).json({
-          success: false,
-          message:
-            "DB Error. Please Call Support",
-        });
+        return sendError(res, 500, "DB Error. Please Call Support");
       }
 
       if (result.affectedRows === 0) {
-        return res.status(404).json({
-          success: false,
-          message:
-            "Leave Request Not Found",
-        });
+        return sendError(res, 404, "Leave Request Not Found");
       }
 
-      return res.status(200).json({
-        success: true,
+      return sendSuccess(res, 200, {
         message:
           status === "Approved"
             ? "Leave Request Approved Successfully"
@@ -100,10 +84,7 @@ export const getEmployeeLeaveHistory = (req, res) => {
   const { employee_id } = req.body;
 
   if (!employee_id) {
-    return res.status(400).json({
-      success: false,
-      message: "Employee ID is required",
-    });
+    return sendError(res, 400, "Employee ID is required");
   }
 
   db.query(
@@ -130,14 +111,10 @@ export const getEmployeeLeaveHistory = (req, res) => {
           err
         );
 
-        return res.status(500).json({
-          success: false,
-          message: "Database Error",
-        });
+        return sendError(res, 500, "Database Error");
       }
 
-      return res.status(200).json({
-        success: true,
+      return sendSuccess(res, 200, {
         count: results.length,
         data: results,
       });

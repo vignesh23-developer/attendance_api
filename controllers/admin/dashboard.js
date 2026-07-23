@@ -1,4 +1,5 @@
 import db from "../../config/db.js";
+import { sendError, sendSuccess } from "../../utils/response.js";
 
 export const getDashboardCounts = async (req, res) => {
   try {
@@ -40,18 +41,12 @@ export const getDashboardCounts = async (req, res) => {
 
     db.query(totalEmployeesQuery, (err1, empResult) => {
       if (err1) {
-        return res.status(500).json({
-          success: false,
-          message: "Employee Count Error",
-        });
+        return sendError(res, 500, "Employee Count Error");
       }
 
       db.query(leaveCountsQuery, (err2, leaveResult) => {
         if (err2) {
-          return res.status(500).json({
-            success: false,
-            message: "Leave Count Error",
-          });
+          return sendError(res, 500, "Leave Count Error");
         }
 
         const totalEmployees =
@@ -72,8 +67,7 @@ export const getDashboardCounts = async (req, res) => {
           permissionCount -
           halfDayCount;
 
-        return res.status(200).json({
-          success: true,
+        return sendSuccess(res, 200, {
           data: {
             totalEmployees,
             presentCount,
@@ -87,9 +81,6 @@ export const getDashboardCounts = async (req, res) => {
   } catch (error) {
     console.error("Dashboard Count Error:", error);
 
-    return res.status(500).json({
-      success: false,
-      message: "Server Error",
-    });
+    return sendError(res, 500, "Server Error");
   }
 };
