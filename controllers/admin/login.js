@@ -1,14 +1,12 @@
 import jwt from "jsonwebtoken";
 import db from "../../config/db.js";
+import { sendError, sendSuccess, sendDbError } from "../../utils/response.js";
 
 export const adminLogin = (req, res) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
-    return res.status(400).json({
-      success: false,
-      message: "Email and Password are required",
-    });
+    return sendError(res, 400, "Email and Password are required");
   }
 
   db.query(
@@ -16,26 +14,17 @@ export const adminLogin = (req, res) => {
     [email],
     (err, results) => {
       if (err) {
-        return res.status(500).json({
-          success: false,
-          message: "Database Error, Please Contact Support",
-        });
+        return sendDbError(res);
       }
 
       if (results.length === 0) {
-        return res.status(404).json({
-          success: false,
-          message: "Admin Not Found",
-        });
+        return sendError(res, 404, "Admin Not Found");
       }
 
       const user = results[0];
 
       if (password !== user.password) {
-        return res.status(401).json({
-          success: false,
-          message: "Invalid Password",
-        });
+        return sendError(res, 401, "Invalid Password");
       }
 
       const token = jwt.sign(
@@ -49,11 +38,10 @@ export const adminLogin = (req, res) => {
         }
       );
 
-      return res.status(200).json({
-        success: true,
+      return sendSuccess(res, 200, {
         message: "Admin Login Successful",
         data: {
-          "email": user.email,  
+          "email": user.email,
           "name": user.name,
           "role": "admin",
           "image": user.image,

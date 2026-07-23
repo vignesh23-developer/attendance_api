@@ -1,6 +1,6 @@
 import db from "../../config/db.js";
-import s3 from "../../config/s3.js";
-import { PutObjectCommand } from "@aws-sdk/client-s3";
+import { uploadFileToS3 } from "../../utils/s3Upload.js";
+import { sendError, sendSuccess } from "../../utils/response.js";
 
 export const employeeRegister = async (req, res) => {
   try {
@@ -14,10 +14,7 @@ export const employeeRegister = async (req, res) => {
     } = req.body;
 
     if (!name || !email || !password || !role || !number) {
-      return res.status(400).json({
-        success: false,
-        message: "All fields are required"
-      });
+      return sendError(res, 400, "All fields are required");
     }
 
     // Check Email Exists
@@ -26,36 +23,17 @@ export const employeeRegister = async (req, res) => {
       [email],
       async (err, results) => {
         if (err) {
-          return res.status(500).json({
-            success: false,
-            message: "Database Error"
-          });
+          return sendError(res, 500, "Database Error");
         }
 
         if (results.length > 0) {
-          return res.status(409).json({
-            success: false,
-            message: "Email already exists"
-          });
+          return sendError(res, 409, "Email already exists");
         }
 
         let imageUrl = image || null;
 
         if (req.file) {
-          const fileName =
-            `employee/profiles/${Date.now()}-${req.file.originalname}`;
-
-          await s3.send(
-            new PutObjectCommand({
-              Bucket: process.env.AWS_BUCKET_NAME,
-              Key: fileName,
-              Body: req.file.buffer,
-              ContentType: req.file.mimetype
-            })
-          );
-
-          imageUrl =
-            `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
+          imageUrl = await uploadFileToS3(req.file, "employee/profiles");
         }
 
         db.query(
@@ -74,14 +52,10 @@ export const employeeRegister = async (req, res) => {
             if (insertErr) {
               console.log(insertErr);
 
-              return res.status(500).json({
-                success: false,
-                message: "Insert Failed"
-              });
+              return sendError(res, 500, "Insert Failed");
             }
 
-            return res.status(201).json({
-              success: true,
+            return sendSuccess(res, 201, {
               message: "Employee Registered Successfully",
               employeeId: result.insertId,
               image: imageUrl
@@ -93,9 +67,6 @@ export const employeeRegister = async (req, res) => {
   } catch (error) {
     console.log(error);
 
-    return res.status(500).json({
-      success: false,
-      message: "Server Error"
-    });
+    return sendError(res, 500, "Server Error");
   }
 };
