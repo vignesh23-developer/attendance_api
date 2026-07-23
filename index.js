@@ -1,10 +1,19 @@
 import express from "express";
+import cors from "cors";
 import authRoutes from "./routes/routes.js";
 import dotenv from "dotenv";
 
 dotenv.config();
 
 const app = express();
+
+// Restrict CORS to an explicit allowlist from CORS_ORIGINS
+// (comma-separated). Falls back to "*" only when unset for local dev.
+const corsOrigins = process.env.CORS_ORIGINS
+  ? process.env.CORS_ORIGINS.split(",").map((o) => o.trim()).filter(Boolean)
+  : "*";
+
+app.use(cors({ origin: corsOrigins }));
 
 
 app.use(express.json());

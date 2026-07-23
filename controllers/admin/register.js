@@ -1,3 +1,4 @@
+import bcrypt from "bcryptjs";
 import db from "../../config/db.js";
 import s3 from "../../config/s3.js";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
@@ -58,6 +59,8 @@ export const employeeRegister = async (req, res) => {
             `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
         }
 
+        const hashedPassword = await bcrypt.hash(password, 10);
+
         db.query(
           `INSERT INTO employee_login
           (name,email,password,role,number,image)
@@ -65,7 +68,7 @@ export const employeeRegister = async (req, res) => {
           [
             name,
             email,
-            password,
+            hashedPassword,
             role,
             number,
             imageUrl
