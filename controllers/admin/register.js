@@ -20,7 +20,6 @@ export const employeeRegister = async (req, res) => {
       });
     }
 
-    // Check Email Exists
     db.query(
       "SELECT * FROM employee_login WHERE email = ?",
       [email],
