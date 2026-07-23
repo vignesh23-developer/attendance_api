@@ -9,50 +9,54 @@ import { getLeaveRequestList, updateLeaveStatus, getEmployeeLeaveHistory} from "
 import { getDashboardCounts } from "../controllers/admin/dashboard.js";
 import { createTask, getEmployeeTasks } from "../controllers/admin/task_assigned.js";
 import upload from "../middleware/upload.js";
+import { verifyToken, requireAdmin } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
 
 
-// Admin flow routes
+// Public auth routes
 router.post("/admin/login", adminLogin);
 
-router.get("/admin/employee-list", getEmployeeList);
-
-router.delete("/delete/employee/:employee_id", deleteEmployee);
-
-router.put("/update/employee/:employee_id", updateEmployee);
-
-router.get("/admin/leave-request-list",getLeaveRequestList);
-
-router.post("/admin/update-leave", updateLeaveStatus);
-
-router.post("/admin/employee-history", getEmployeeLeaveHistory);
-
-router.get("/admin/dashboard", getDashboardCounts);
-
-router.post("/admin/create-task", createTask);
-
-router.get("/employee/tasks/:employee_id", getEmployeeTasks);
-
-
-
-// Employee Registration with optional profile image upload
-router.post("/employee/register", upload.single("image"), employeeRegister);
-
-// Employee flow roots 
 router.post("/employee/login", employeeLogin);
 
-router.post("/employee/leave-request", createLeaveRequest);
 
-router.post("/employee/get-leave-requests", getLeaveRequests);
 
-router.post("/employee/delete-leave-request", deleteLeaveRequest);
+// Admin flow routes (require a valid token with admin role)
+router.get("/admin/employee-list", verifyToken, requireAdmin, getEmployeeList);
 
-router.post("/employee/checkin",upload.single("checkin_image"), employeeCheckIn);
+router.delete("/delete/employee/:employee_id", verifyToken, requireAdmin, deleteEmployee);
 
-router.post("/employee/checkout", upload.single("checkout_image"), employeeCheckOut);
+router.put("/update/employee/:employee_id", verifyToken, requireAdmin, updateEmployee);
 
-router.post("/employee/attendance-status", getAttendanceStatus);
+router.get("/admin/leave-request-list", verifyToken, requireAdmin, getLeaveRequestList);
+
+router.post("/admin/update-leave", verifyToken, requireAdmin, updateLeaveStatus);
+
+router.post("/admin/employee-history", verifyToken, requireAdmin, getEmployeeLeaveHistory);
+
+router.get("/admin/dashboard", verifyToken, requireAdmin, getDashboardCounts);
+
+router.post("/admin/create-task", verifyToken, requireAdmin, createTask);
+
+// Employee Registration (admin action) with optional profile image upload
+router.post("/employee/register", verifyToken, requireAdmin, upload.single("image"), employeeRegister);
+
+
+
+// Employee flow routes (require a valid token)
+router.get("/employee/tasks/:employee_id", verifyToken, getEmployeeTasks);
+
+router.post("/employee/leave-request", verifyToken, createLeaveRequest);
+
+router.post("/employee/get-leave-requests", verifyToken, getLeaveRequests);
+
+router.post("/employee/delete-leave-request", verifyToken, deleteLeaveRequest);
+
+router.post("/employee/checkin", verifyToken, upload.single("checkin_image"), employeeCheckIn);
+
+router.post("/employee/checkout", verifyToken, upload.single("checkout_image"), employeeCheckOut);
+
+router.post("/employee/attendance-status", verifyToken, getAttendanceStatus);
 
 export default router;

@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import db from "../../config/db.js";
+import { verifyPassword } from "../../utils/password.js";
 
 export const adminLogin = (req, res) => {
   const { email, password } = req.body;
@@ -14,7 +15,7 @@ export const adminLogin = (req, res) => {
   db.query(
     "SELECT * FROM admin_login WHERE email = ?",
     [email],
-    (err, results) => {
+    async (err, results) => {
       if (err) {
         return res.status(500).json({
           success: false,
@@ -31,7 +32,9 @@ export const adminLogin = (req, res) => {
 
       const user = results[0];
 
-      if (password !== user.password) {
+      const passwordMatches = await verifyPassword(password, user.password);
+
+      if (!passwordMatches) {
         return res.status(401).json({
           success: false,
           message: "Invalid Password",

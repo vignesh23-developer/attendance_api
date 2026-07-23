@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import db from "../../config/db.js";
+import { verifyPassword } from "../../utils/password.js";
 
 export const employeeLogin = (req, res) => {
     const { email, password } = req.body;
@@ -14,7 +15,7 @@ export const employeeLogin = (req, res) => {
     db.query(
         "SELECT * FROM employee_login WHERE email = ?",
         [email],
-        (err, results) => {
+        async (err, results) => {
             if (err) {
                 console.error(err);
 
@@ -41,8 +42,9 @@ export const employeeLogin = (req, res) => {
             //     });
             // }
 
-            // plain text password comparison
-            if (user.password !== password) {
+            const passwordMatches = await verifyPassword(password, user.password);
+
+            if (!passwordMatches) {
                 return res.status(401).json({
                     success: false,
                     message: "Invalid Password",
