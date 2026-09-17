@@ -58,3 +58,12 @@ app.listen(PORT, "0.0.0.0", () => {
   console.log("ENV PORT:", process.env.PORT);
   console.log(`Server running on http://0.0.0.0:${PORT}`);
 });
+
+// Surface otherwise-silent async failures instead of letting them vanish
+process.on("unhandledRejection", (reason) => {
+  console.error("Unhandled Promise Rejection:", reason);
+});
+
+process.on("uncaughtException", (err) => {
+  console.error("Uncaught Exception:", err);
+});
