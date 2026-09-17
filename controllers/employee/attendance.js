@@ -1,6 +1,11 @@
 import db from "../../config/db.js";
-import s3 from "../../config/s3.js";
-import { PutObjectCommand } from "@aws-sdk/client-s3";
+import { uploadFileToS3 } from "../../utils/s3Upload.js";
+import { sendError, sendSuccess } from "../../utils/response.js";
+
+const IMAGE_REQUIREMENTS = {
+    allowed_formats: ["jpg", "jpeg", "png"],
+    max_file_size: "1 MB",
+};
 
 export const employeeCheckIn = async (req, res) => {
     try {
@@ -13,33 +18,23 @@ export const employeeCheckIn = async (req, res) => {
         } = req.body;
 
         if (!employee_id || !employee_name) {
-            return res.status(400).json({
-                success: false,
-                message: "employee_id and employee_name are required",
-            });
+            return sendError(
+                res,
+                400,
+                "employee_id and employee_name are required"
+            );
         }
 
         if (!req.file) {
-            return res.status(400).json({
-                success: false,
-                message: "Check-in image is required",
-                allowed_formats: ["jpg", "jpeg", "png"],
-                max_file_size: "1 MB",
-            });
+            return sendError(
+                res,
+                400,
+                "Check-in image is required",
+                IMAGE_REQUIREMENTS
+            );
         }
 
-        const fileName = `attendance/checkin/${Date.now()}-${req.file.originalname}`;
-
-        await s3.send(
-            new PutObjectCommand({
-                Bucket: process.env.AWS_BUCKET_NAME,
-                Key: fileName,
-                Body: req.file.buffer,
-                ContentType: req.file.mimetype,
-            })
-        );
-
-        const checkin_image = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
+        const checkin_image = await uploadFileToS3(req.file, "attendance/checkin");
 
         const checkSql = `
             SELECT attendance_id
@@ -51,9 +46,7 @@ export const employeeCheckIn = async (req, res) => {
 
         db.query(checkSql, [employee_id], (checkErr, rows) => {
             if (checkErr) {
-                return res.status(500).json({
-                    success: false,
-                    message: "Database error",
+                return sendError(res, 500, "Database error", {
                     error: checkErr.message,
                 });
             }
@@ -93,15 +86,12 @@ export const employeeCheckIn = async (req, res) => {
                     ],
                     (updateErr) => {
                         if (updateErr) {
-                            return res.status(500).json({
-                                success: false,
-                                message: "Database error",
+                            return sendError(res, 500, "Database error", {
                                 error: updateErr.message,
                             });
                         }
 
-                        return res.status(200).json({
-                            success: true,
+                        return sendSuccess(res, 200, {
                             message:
                                 "Today's attendance already exists. Record updated successfully.",
                             attendance_id: attendanceId,
@@ -112,27 +102,6 @@ export const employeeCheckIn = async (req, res) => {
 
                 return;
             }
-
-            const updateSql = `
-                UPDATE employee_attendance
-                SET
-                    employee_name = ?,
-                    checkin_time = NOW(),
-                    checkin_image = ?,
-                    checkin_location = ?,
-                    checkin_lat = ?,
-                    checkin_long = ?,
-
-                    checkout_time = NULL,
-                    checkout_image = NULL,
-                    checkout_location = NULL,
-                    checkout_lat = NULL,
-                    checkout_long = NULL,
-
-                    status = 'Present'
-
-                WHERE attendance_id = ?
-            `;
 
             const insertSql = `
 INSERT INTO employee_attendance (
@@ -162,15 +131,12 @@ VALUES (
                 ],
                 (insertErr, result) => {
                     if (insertErr) {
-                        return res.status(500).json({
-                            success: false,
-                            message: "Database error",
+                        return sendError(res, 500, "Database error", {
                             error: insertErr.message,
                         });
                     }
 
-                    return res.status(200).json({
-                        success: true,
+                    return sendSuccess(res, 200, {
                         message: "Check-in successful",
                         attendance_id: result.insertId,
                         checkin_image,
@@ -179,11 +145,7 @@ VALUES (
             );
         });
     } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: "Server error",
-            error: error.message,
-        });
+        return sendError(res, 500, "Server error", { error: error.message });
     }
 };
 
@@ -197,33 +159,22 @@ export const employeeCheckOut = async (req, res) => {
         } = req.body;
 
         if (!employee_id) {
-            return res.status(400).json({
-                success: false,
-                message: "employee_id is required",
-            });
+            return sendError(res, 400, "employee_id is required");
         }
 
         if (!req.file) {
-            return res.status(400).json({
-                success: false,
-                message: "Check-out image is required",
-                allowed_formats: ["jpg", "jpeg", "png"],
-                max_file_size: "1 MB",
-            });
+            return sendError(
+                res,
+                400,
+                "Check-out image is required",
+                IMAGE_REQUIREMENTS
+            );
         }
 
-        const fileName = `attendance/checkout/${Date.now()}-${req.file.originalname}`;
-
-        await s3.send(
-            new PutObjectCommand({
-                Bucket: process.env.AWS_BUCKET_NAME,
-                Key: fileName,
-                Body: req.file.buffer,
-                ContentType: req.file.mimetype,
-            })
+        const checkout_image = await uploadFileToS3(
+            req.file,
+            "attendance/checkout"
         );
-
-        const checkout_image = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
 
         const findSql = `
                     SELECT
@@ -239,18 +190,13 @@ export const employeeCheckOut = async (req, res) => {
 
         db.query(findSql, [employee_id], (err, result) => {
             if (err) {
-                return res.status(500).json({
-                    success: false,
-                    message: "Database error",
+                return sendError(res, 500, "Database error", {
                     error: err.message,
                 });
             }
 
             if (result.length === 0) {
-                return res.status(404).json({
-                    success: false,
-                    message: "No active check-in found",
-                });
+                return sendError(res, 404, "No active check-in found");
             }
 
             const attendanceId = result[0].attendance_id;
@@ -283,15 +229,12 @@ export const employeeCheckOut = async (req, res) => {
                 ],
                 (updateErr) => {
                     if (updateErr) {
-                        return res.status(500).json({
-                            success: false,
-                            message: "Database error",
+                        return sendError(res, 500, "Database error", {
                             error: updateErr.message,
                         });
                     }
 
-                    return res.status(200).json({
-                        success: true,
+                    return sendSuccess(res, 200, {
                         message: "Check-out successful",
                         checkout_image,
                     });
@@ -299,11 +242,7 @@ export const employeeCheckOut = async (req, res) => {
             );
         });
     } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: "Server error",
-            error: error.message,
-        });
+        return sendError(res, 500, "Server error", { error: error.message });
     }
 };
 
@@ -314,10 +253,7 @@ export const getAttendanceStatus = (req, res) => {
         const { employee_id } = req.body;
 
         if (!employee_id) {
-            return res.status(400).json({
-                success: false,
-                message: "employee_id is required",
-            });
+            return sendError(res, 400, "employee_id is required");
         }
 
         const sql = `
@@ -341,30 +277,20 @@ export const getAttendanceStatus = (req, res) => {
 
         db.query(sql, [employee_id], (err, result) => {
             if (err) {
-                return res.status(500).json({
-                    success: false,
-                    message: "Database error",
+                return sendError(res, 500, "Database error", {
                     error: err.message,
                 });
             }
 
             if (result.length === 0) {
-                return res.status(404).json({
-                    success: false,
-                    message: "No attendance record found for today",
-                });
+                return sendError(res, 404, "No attendance record found for today");
             }
 
-            return res.status(200).json({
-                success: true,
+            return sendSuccess(res, 200, {
                 data: result[0],
             });
         });
     } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: "Server error",
-            error: error.message,
-        });
+        return sendError(res, 500, "Server error", { error: error.message });
     }
 };

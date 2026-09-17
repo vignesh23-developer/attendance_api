@@ -1,4 +1,5 @@
 import db from "../../config/db.js";
+import { sendError, sendSuccess, sendDbError } from "../../utils/response.js";
 
 export const getEmployeeList = (req, res) => {
   db.query(
@@ -16,14 +17,10 @@ export const getEmployeeList = (req, res) => {
       if (err) {
         console.error("Get Employee List Error:", err);
 
-        return res.status(500).json({
-          success: false,
-          message: "Database Error, Please Contact Support",
-        });
+        return sendDbError(res);
       }
 
-      return res.status(200).json({
-        success: true,
+      return sendSuccess(res, 200, {
         count: results.length,
         data: results,
       });
@@ -36,10 +33,7 @@ export const deleteEmployee = (req, res) => {
   const { employee_id } = req.params;
 
   if (!employee_id) {
-    return res.status(400).json({
-      success: false,
-      message: "Employee ID is required",
-    });
+    return sendError(res, 400, "Employee ID is required");
   }
 
   db.query(
@@ -49,21 +43,14 @@ export const deleteEmployee = (req, res) => {
       if (err) {
         console.error("Delete Employee Error:", err);
 
-        return res.status(500).json({
-          success: false,
-          message: "Database Error, Please Contact Support",
-        });
+        return sendDbError(res);
       }
 
       if (result.affectedRows === 0) {
-        return res.status(404).json({
-          success: false,
-          message: "Employee Not Found",
-        });
+        return sendError(res, 404, "Employee Not Found");
       }
 
-      return res.status(200).json({
-        success: true,
+      return sendSuccess(res, 200, {
         message: "Employee Deleted Successfully",
       });
     }
@@ -77,10 +64,7 @@ export const updateEmployee = (req, res) => {
   const { name, role, number, image } = req.body;
 
   if (!employee_id) {
-    return res.status(400).json({
-      success: false,
-      message: "Employee ID is required",
-    });
+    return sendError(res, 400, "Employee ID is required");
   }
 
   db.query(
@@ -92,21 +76,14 @@ export const updateEmployee = (req, res) => {
       if (err) {
         console.error("Update Employee Error:", err);
 
-        return res.status(500).json({
-          success: false,
-          message: "Database Error, Please Contact Support",
-        });
+        return sendDbError(res);
       }
 
       if (result.affectedRows === 0) {
-        return res.status(404).json({
-          success: false,
-          message: "Employee Not Found",
-        });
+        return sendError(res, 404, "Employee Not Found");
       }
 
-      return res.status(200).json({
-        success: true,
+      return sendSuccess(res, 200, {
         message: "Employee Updated Successfully",
       });
     }
